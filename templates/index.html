@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P.A.C.E. ChatBot</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="top-nav">
+            <div class="logo">
+                P.A.C.E. <span class="logo-user">{{ username | upper }}</span>
+            </div>
+            <div class="header-controls">
+                <button id="flashcard-btn" class="icon-btn" title="Generate Flashcards"
+                    aria-label="Generate Flashcards">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" class="flashcard-icon-svg">
+                        <rect x="3" y="8" width="14" height="12" rx="2" ry="2"></rect>
+                        <path d="M7 4h12a2 2 0 0 1 2 2v12"></path>
+                    </svg>
+                </button>
+
+                <button id="history-btn" class="icon-btn" title="Archive">⏳</button>
+                <button id="audio-toggle-btn" class="icon-btn audio-btn" title="Toggle Audio">🔊</button>
+                <a href="/logout" class="logout-link">
+                    <button class="icon-btn logout-btn" title="Logout">⍈</button>
+                </a>
+            </div>
+        </header>
+
+        <main class="chat-area" id="chat-box">
+            <div class="greeting-container" id="greeting">
+                <h1>Hi {{ username | capitalize }}</h1>
+                <h2>Where should we start?</h2>
+            </div>
+
+            <div class="typing-indicator hidden" id="typing-indicator">
+                <span></span><span></span><span></span>
+            </div>
+        </main>
+
+        <div class="input-wrapper">
+            <div class="input-box">
+                <input type="file" id="file-upload" accept=".pdf,.txt" class="hidden"
+                    aria-label="Upload document for P.A.C.E.">
+
+                <button id="upload-btn" class="icon-btn" title="Upload File" aria-label="Upload File">+</button>
+
+                <input type="text" id="user-input" placeholder="Ask P.A.C.E..." autocomplete="off"
+                    aria-label="Type your message to P.A.C.E.">
+
+                <button id="mic-btn" class="icon-btn mic" title="Voice Input"
+                    aria-label="Toggle Voice Input">🎤</button>
+                <button id="send-btn" class="icon-btn send" title="Send Message" aria-label="Send Message">➔</button>
+            </div>
+            <div class="disclaimer">P.A.C.E. may display inaccurate info, so double-check its responses.</div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>ARCHIVE</h3>
+                <button id="close-history-btn" class="icon-btn close-btn">✕</button>
+            </div>
+            <div id="history-list" class="records-list"></div>
+        </div>
+    </div>
+
+    <div id="study-mode" class="study-mode-overlay hidden">
+        <header class="study-header">
+            <button id="close-study-btn" class="study-back-btn" title="Back to Chat">
+                <span>←</span> Back to Chat
+            </button>
+            <h2 class="study-title">Study Mode</h2>
+            <div class="study-header-spacer"></div>
+        </header>
+
+        <div class="study-container">
+            <div id="large-flashcard" class="flashcard large">
+                <div class="flashcard-inner">
+                    <div class="flashcard-front">
+                        <div class="card-content" id="card-front-text"></div>
+                    </div>
+                    <div class="flashcard-back">
+                        <div class="card-content" id="card-back-text"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="study-controls">
+                <button id="prev-card-btn" class="study-nav-btn">◀ Prev</button>
+                <span id="card-counter" class="card-counter">1 / 1</span>
+                <button id="next-card-btn" class="study-nav-btn">Next ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>

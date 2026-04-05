@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P.A.C.E. - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h2>Welcome to P.A.C.E.</h2>
+                <p>Log in to continue your journey</p>
+            </div>
+
+            {% if error %}
+            <div class="alert error">{{ error }}</div>
+            {% endif %}
+            {% if success %}
+            <div class="alert success">{{ success }}</div>
+            {% endif %}
+
+            <form action="/login" method="POST" class="auth-form">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit" class="auth-submit-btn">Continue</button>
+            </form>
+
+            <a href="/register" class="toggle-link">Don't have an account? Sign up</a>
+        </div>
+    </div>
+</body>
+
+</html>
