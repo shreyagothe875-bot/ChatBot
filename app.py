@@ -12,7 +12,7 @@ app.secret_key = "sys_core_super_secret_key"
 
 # --- API Configuration ---
 # Your new API Key
-API_KEY = "AIzaSyDoDv0rl7VmiaAxpNkntSrB2P0uYnZ2cto" 
+API_KEY = "AIzaSyBnh9mcuxwCV4tUHrhAe-dAFEatNfn2G7Y" 
 client = genai.Client(api_key=API_KEY)
 
 def init_db():
