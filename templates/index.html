@@ -4,109 +4,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P.A.C.E. ChatBot</title>
-
+    <title>P.A.C.E. | Terminal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
     <div class="app-container">
-        <header class="top-nav">
-            <div class="logo">
-                P.A.C.E. <span class="logo-user">{{ username | upper }}</span>
+        <header class="header">
+            <div class="brand">
+                P.A.C.E. <span style="color: var(--text-dim); font-size: 0.7rem; margin-left: 10px;">OPERATIVE: {{
+                    username }}</span>
             </div>
-            <div class="header-controls">
-                <button id="flashcard-btn" class="icon-btn" title="Generate Flashcards"
-                    aria-label="Generate Flashcards">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" class="flashcard-icon-svg">
-                        <rect x="3" y="8" width="14" height="12" rx="2" ry="2"></rect>
-                        <path d="M7 4h12a2 2 0 0 1 2 2v12"></path>
-                    </svg>
+
+            <div class="header-actions">
+                <button onclick="exitHistory()" id="back-btn" class="btn-nav" style="display: none;"
+                    title="Return to Chat" aria-label="Back to Terminal">
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Terminal
                 </button>
 
-                <button id="history-btn" class="icon-btn" title="Archive">⏳</button>
-                <button id="audio-toggle-btn" class="icon-btn audio-btn" title="Toggle Audio">🔊</button>
-                <a href="/logout" class="logout-link">
-                    <button class="icon-btn logout-btn" title="Logout">⍈</button>
-                </a>
+                <button onclick="loadHistory()" id="history-btn" class="btn-nav" title="View Chat History"
+                    aria-label="View Chat History">
+                    <i class="fas fa-history" aria-hidden="true"></i> History
+                </button>
+
+                <button onclick="generateFlashcards()" id="flashcard-btn" class="btn-nav"
+                    style="color: var(--accent-mint);" title="Generate Flashcards" aria-label="Generate Flashcards">
+                    <i class="fas fa-bolt" aria-hidden="true"></i> Study Mode
+                </button>
+
+                <button onclick="window.location.href='/logout'" class="btn-nav" style="color: #ff4d4d;"
+                    title="Terminate Session" aria-label="Terminate Session">
+                    <i class="fas fa-power-off" aria-hidden="true"></i>
+                </button>
             </div>
         </header>
 
         <main class="chat-area" id="chat-box">
-            <div class="greeting-container" id="greeting">
-                <h1>Hi {{ username | capitalize }}</h1>
-                <h2>Where should we start?</h2>
-            </div>
-
-            <div class="typing-indicator hidden" id="typing-indicator">
-                <span></span><span></span><span></span>
+            <div class="bot-msg message">
+                Hi **{{ username }}**, Protocol Initialized. System ready for queries.
             </div>
         </main>
 
-        <div class="input-wrapper">
-            <div class="input-box">
-                <input type="file" id="file-upload" accept=".pdf,.txt" class="hidden"
-                    aria-label="Upload document for P.A.C.E.">
+        <footer class="input-area">
+            <div class="input-container">
+                <div class="input-extras">
+                    <label for="file-upload" class="extra-btn" title="Attach Document" aria-label="Attach Document">
+                        <i class="fas fa-paperclip" aria-hidden="true"></i>
+                    </label>
+                    <input type="file" id="file-upload" style="display:none;">
 
-                <button id="upload-btn" class="icon-btn" title="Upload File" aria-label="Upload File">+</button>
+                    <button type="button" class="extra-btn" title="Voice Input" aria-label="Voice Input">
+                        <i class="fas fa-microphone" aria-hidden="true"></i>
+                    </button>
 
-                <input type="text" id="user-input" placeholder="Ask P.A.C.E..." autocomplete="off"
-                    aria-label="Type your message to P.A.C.E.">
-
-                <button id="mic-btn" class="icon-btn mic" title="Voice Input"
-                    aria-label="Toggle Voice Input">🎤</button>
-                <button id="send-btn" class="icon-btn send" title="Send Message" aria-label="Send Message">➔</button>
-            </div>
-            <div class="disclaimer">P.A.C.E. may display inaccurate info, so double-check its responses.</div>
-        </div>
-    </div>
-
-    <div id="history-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>ARCHIVE</h3>
-                <button id="close-history-btn" class="icon-btn close-btn">✕</button>
-            </div>
-            <div id="history-list" class="records-list"></div>
-        </div>
-    </div>
-
-    <div id="study-mode" class="study-mode-overlay hidden">
-        <header class="study-header">
-            <button id="close-study-btn" class="study-back-btn" title="Back to Chat">
-                <span>←</span> Back to Chat
-            </button>
-            <h2 class="study-title">Study Mode</h2>
-            <div class="study-header-spacer"></div>
-        </header>
-
-        <div class="study-container">
-            <div id="large-flashcard" class="flashcard large">
-                <div class="flashcard-inner">
-                    <div class="flashcard-front">
-                        <div class="card-content" id="card-front-text"></div>
-                    </div>
-                    <div class="flashcard-back">
-                        <div class="card-content" id="card-back-text"></div>
-                    </div>
+                    <button type="button" class="extra-btn" title="Image Analysis" aria-label="Image Analysis">
+                        <i class="fas fa-image" aria-hidden="true"></i>
+                    </button>
                 </div>
-            </div>
 
-            <div class="study-controls">
-                <button id="prev-card-btn" class="study-nav-btn">◀ Prev</button>
-                <span id="card-counter" class="card-counter">1 / 1</span>
-                <button id="next-card-btn" class="study-nav-btn">Next ▶</button>
+                <form id="chat-form" style="display: flex; flex: 1;">
+                    <input type="text" id="user-input" placeholder="Initiate query..." required autocomplete="off"
+                        aria-label="Chat Input">
+                    <button type="submit" class="btn-send">EXECUTE</button>
+                </form>
             </div>
-        </div>
+            <p style="text-align: center; color: var(--text-dim); font-size: 0.65rem; margin-top: 10px;">
+                ANALYTICAL INTELLIGENCE PROTOCOL V1.0.4
+            </p>
+        </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const chatBox = document.getElementById('chat-box');
+
+        // --- CHAT LOGIC ---
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('user-input');
+            const message = input.value;
+
+            appendMessage(message, 'user-msg');
+            input.value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `message=${encodeURIComponent(message)}`
+                });
+                const data = await response.json();
+                appendMessage(data.response, 'bot-msg');
+            } catch (err) {
+                appendMessage("SYSTEM ERROR: Failed to reach protocol.", 'bot-msg');
+            }
+        });
+
+        function appendMessage(text, className) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${className}`;
+            msgDiv.innerText = text;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // --- HISTORY LOGIC ---
+        async function loadHistory() {
+            try {
+                const response = await fetch('/history');
+                const data = await response.json();
+
+                chatBox.innerHTML = ''; // Clear current view
+
+                if (data.length === 0) {
+                    appendMessage("SYSTEM: No previous logs found.", 'bot-msg');
+                } else {
+                    data.forEach(item => {
+                        appendMessage(item.user, 'user-msg');
+                        appendMessage(item.bot, 'bot-msg');
+                    });
+                }
+
+                // Toggle Buttons
+                document.getElementById('back-btn').style.display = 'inline-block';
+                document.getElementById('history-btn').style.display = 'none';
+            } catch (e) {
+                alert("Could not retrieve history logs.");
+            }
+        }
+
+        function exitHistory() {
+            document.getElementById('back-btn').style.display = 'none';
+            document.getElementById('history-btn').style.display = 'inline-block';
+
+            // Restore original welcome screen
+            chatBox.innerHTML = `
+                <div class="bot-msg message">
+                    Hi **{{ username }}**, Protocol Initialized. System ready for queries.
+                </div>
+            `;
+        }
+
+        // --- STUDY MODE LOGIC ---
+        async function generateFlashcards() {
+            const btn = document.getElementById('flashcard-btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+
+            try {
+                const response = await fetch('/generate_flashcards', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    console.log("Flashcards generated:", data);
+                    alert("Flashcards Ready! Protocol shifting to Study Mode.");
+                    // window.location.href = '/study'; // Future study mode route
+                }
+            } catch (e) {
+                alert("Connection failed.");
+            }
+            btn.innerHTML = originalHTML;
+        }
+    </script>
 </body>
 
 </html>

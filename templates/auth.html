@@ -4,32 +4,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P.A.C.E. - Login</title>
+    <title>P.A.C.E. | Protocol Access</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
     <div class="auth-wrapper">
-        <div class="auth-container">
-            <div class="auth-header">
-                <h2>Welcome to P.A.C.E.</h2>
-                <p>Log in to continue your journey</p>
-            </div>
+        <div class="auth-box">
+            <h2>{% if 'register' in request.path %}Join P.A.C.E.{% else %}Welcome back{% endif %}</h2>
+            <p class="subtitle">Analytical Intelligence Protocol v1.0.4</p>
 
             {% if error %}
-            <div class="alert error">{{ error }}</div>
+            <div
+                style="background: rgba(255, 77, 77, 0.1); border: 1px solid #ff4d4d; color: #ff4d4d; padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 20px;">
+                ⚠️ {{ error }}
+            </div>
             {% endif %}
             {% if success %}
-            <div class="alert success">{{ success }}</div>
+            <div
+                style="background: rgba(0, 230, 118, 0.1); border: 1px solid var(--accent-mint); color: var(--accent-mint); padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 20px;">
+                ✅ {{ success }}
+            </div>
             {% endif %}
 
-            <form action="/login" method="POST" class="auth-form">
-                <input type="text" name="username" placeholder="Username" required>
-                <input type="password" name="password" placeholder="Password" required>
-                <button type="submit" class="auth-submit-btn">Continue</button>
+            <form action="{% if 'register' in request.path %}/register{% else %}/login{% endif %}" method="POST">
+                <div class="input-group">
+                    <label>Identity (Username)</label>
+                    <input type="text" name="username" placeholder="agent@pace.ai" autocomplete="username" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Access Key (Password)</label>
+                    <input type="password" name="password" placeholder="••••••••"
+                        autocomplete="{% if 'register' in request.path %}new-password{% else %}current-password{% endif %}"
+                        required>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    {% if 'register' in request.path %}Initialize Account{% else %}Sign In to Protocol →{% endif %}
+                </button>
             </form>
 
-            <a href="/register" class="toggle-link">Don't have an account? Sign up</a>
+            <div class="auth-footer">
+                {% if 'register' in request.path %}
+                Already recognized? <a href="/login">Login</a>
+                {% else %}
+                New operative? <a href="/register">Sign up</a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </body>

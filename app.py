@@ -11,11 +11,10 @@ app = Flask(__name__)
 app.secret_key = "sys_core_super_secret_key"
 
 # --- API Configuration ---
-# Fetch the API key securely from the environment variables (Render will provide this)
-API_KEY = os.environ.get("GEMINI_API_KEY") 
+# Your new API Key
+API_KEY = "AIzaSyDoDv0rl7VmiaAxpNkntSrB2P0uYnZ2cto" 
 client = genai.Client(api_key=API_KEY)
 
-# --- Database Initialization ---
 def init_db():
     with sqlite3.connect('sys_users.db') as conn:
         cursor = conn.cursor()
@@ -34,31 +33,29 @@ def init_db():
 
 init_db()
 
-# --- Authentication Routes ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
         with sqlite3.connect('sys_users.db') as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
             user = cursor.fetchone()
-        
         if user and check_password_hash(user[2], password):
             session['user_id'] = user[0]
             session['username'] = user[1]
             return redirect(url_for('home'))
-        else:
-            return render_template('auth.html', error="ACCESS DENIED: Invalid credentials.")
+        return render_template('auth.html', error="ACCESS DENIED: Invalid credentials.")
     return render_template('auth.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if not username or not password:
+            return render_template('auth.html', error="ERROR: Missing fields.")
         hashed_password = generate_password_hash(password)
         try:
             with sqlite3.connect('sys_users.db') as conn:
@@ -75,7 +72,6 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- Main App Routes ---
 @app.route('/')
 def home():
     if 'user_id' not in session:
@@ -84,8 +80,7 @@ def home():
 
 @app.route('/history', methods=['GET'])
 def get_history():
-    if 'user_id' not in session:
-        return jsonify([])
+    if 'user_id' not in session: return jsonify([])
     with sqlite3.connect('sys_users.db') as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT user_msg, bot_text FROM messages WHERE user_id = ? ORDER BY id ASC', (session['user_id'],))
@@ -100,69 +95,46 @@ def chat():
     user_message = request.form.get('message', '')
     
     try:
+        print(f"--- LOG: Request from {session['username']} ---")
+        # Standard chat call
+        response = client.models.generate_content(model="gemini-2.0-flash", contents=user_message)
+        bot_response = response.text
+        
         with sqlite3.connect('sys_users.db') as conn:
             cursor = conn.cursor()
-            # Fetch last 2 exchanges for context
-            cursor.execute('SELECT user_msg, bot_text FROM messages WHERE user_id = ? ORDER BY id DESC LIMIT 2', (session['user_id'],))
-            history_rows = cursor.fetchall()
-            history_rows.reverse()
-            
-            history_context = "".join([f"User: {row[0]}\nBot: {row[1]}\n\n" for row in history_rows])
-            final_prompt = f"Context:\n{history_context}\nQuestion: {user_message}"
-
-            response = client.models.generate_content(model="gemini-2.5-flash", contents=final_prompt)
-            bot_response = response.text
-            
-            cursor.execute('INSERT INTO messages (user_id, user_msg, bot_text) VALUES (?, ?, ?)', (session['user_id'], user_message, bot_response))
+            cursor.execute('INSERT INTO messages (user_id, user_msg, bot_text) VALUES (?, ?, ?)', 
+                           (session['user_id'], user_message, bot_response))
             conn.commit()
         
         return jsonify({"response": bot_response})
         
     except Exception as e:
+        print(f"!!! REAL ERROR IN TERMINAL: {e}")
         if "429" in str(e):
-            return jsonify({"response": "I'm thinking too fast! Please wait 30 seconds."})
-        return jsonify({"response": f"SYSTEM ERROR: {str(e)}"})
-    
-# --- Flashcard Generation Route ---
+            return jsonify({"response": "PROTOCOL COOLING: Please wait 30 seconds."})
+        return jsonify({"response": "SYSTEM BUSY: Please try again."})
+
 @app.route('/generate_flashcards', methods=['POST'])
 def generate_flashcards():
-    time.sleep(1.5) 
-    
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
+    if 'user_id' not in session: return jsonify({"error": "Unauthorized"}), 401
     try:
         with sqlite3.connect('sys_users.db') as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT user_msg, bot_text FROM messages WHERE user_id = ? ORDER BY id DESC LIMIT 1', (session['user_id'],))
             row = cursor.fetchone()
 
-        if not row:
-            return jsonify({"error": "Please chat with P.A.C.E. about a topic first!"})
+        if not row: return jsonify({"error": "Chat with P.A.C.E. first!"})
 
-        context = f"User asked: {row[0]}\nBot answered: {row[1]}"
-        flashcard_prompt = f"""
-        Generate exactly 5 educational flashcards based on this context:
-        {context}
-        
-        Format as a JSON array with 'question' and 'answer' keys.
-        """
-
-        # Force the API to return pure JSON
+        prompt = f"Generate 5 educational flashcards as JSON for: {row[1]}"
         response = client.models.generate_content(
-            model="gemini-2.5-flash", 
-            contents=flashcard_prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-            )
+            model="gemini-2-flash", 
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json")
         )
-        
-        flashcards = json.loads(response.text)
-        return jsonify(flashcards)
-
+        return jsonify(json.loads(response.text))
     except Exception as e:
-        print(f"\n❌ FLASHCARD CRASH: {str(e)}\n") 
-        return jsonify({"error": "Failed to build cards. Try asking a shorter question!"}), 500
+        print(f"FLASHCARD ERROR: {e}")
+        return jsonify({"error": "Model busy. Try again."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
