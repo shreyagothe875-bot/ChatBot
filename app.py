@@ -145,3 +145,6 @@ def generate_flashcards():
 # Vercel doesn't actually use this block, but it's safe to keep for local testing
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
+
+
+    # Forcing Vercel to update
